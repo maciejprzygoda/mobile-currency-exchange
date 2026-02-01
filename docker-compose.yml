@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: kantor_postgres
+    environment:
+      POSTGRES_USER: kantor
+      POSTGRES_PASSWORD: kantor
+      POSTGRES_DB: kantor
+    ports:
+      - "5432:5432"
+    volumes:
+      - kantor_pg:/var/lib/postgresql/data
+volumes:
+  kantor_pg:

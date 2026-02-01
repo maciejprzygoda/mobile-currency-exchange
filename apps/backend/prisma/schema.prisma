@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionType {
+  TOPUP
+  BUY
+  SELL
+}
+
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  wallet       Wallet?
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id        String          @id @default(cuid())
+  userId    String          @unique
+  user      User            @relation(fields: [userId], references: [id])
+  balances  WalletBalance[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@map("wallets")
+}
+
+model WalletBalance {
+  id           String   @id @default(cuid())
+  walletId     String
+  currencyCode String
+  amount       Decimal  @db.Decimal(18, 6)
+  wallet       Wallet   @relation(fields: [walletId], references: [id])
+
+  @@unique([walletId, currencyCode])
+  @@map("wallet_balances")
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  userId        String
+  type          TransactionType
+  baseCurrency  String?
+  quoteCurrency String?
+  baseAmount    Decimal?        @db.Decimal(18, 6)
+  quoteAmount   Decimal?        @db.Decimal(18, 6)
+  rate          Decimal?        @db.Decimal(18, 8)
+  spread        Decimal?        @db.Decimal(6, 5)
+  effectiveDate DateTime?
+  createdAt     DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("transactions")
+}
+
+model RateCache {
+  id            String   @id @default(cuid())
+  table         String
+  currencyCode  String
+  rate          Decimal  @db.Decimal(18, 8)
+  effectiveDate DateTime
+  fetchedAt     DateTime @default(now())
+
+  @@unique([table, currencyCode, effectiveDate])
+  @@index([currencyCode, effectiveDate])
+  @@map("rates_cache")
+}
